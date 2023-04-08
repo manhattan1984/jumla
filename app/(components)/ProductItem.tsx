@@ -1,53 +1,32 @@
-"use client";
+import { ProductType } from "@/utils/type";
 import Image from "next/image";
-import Link from "next/link";
 import React from "react";
-import { motion as m } from "framer-motion";
 
 const ProductItem = ({
-  name,
-  product_image,
-  id,
-  key,
-  product_item,
+  product: {
+    id,
+    name,
+    price: { formatted_with_symbol },
+    image: { url },
+  },
 }: {
-  name: string;
-  product_image: string;
-  id: number;
-  key: number;
-  product_item: {
-    price: number;
-  }[];
+  product: ProductType;
 }) => {
-  const prices = product_item.map(({ price }) => price).sort();
-  const maxPrice = Math.max(...prices);
-  const minPrice = Math.min(...prices);
-
   return (
-    <m.div
-      className="text-center basis-1/2 md:basis-1/3"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0, transition: { delay: 1 * +key } }}
-    >
-      <Link href={`/products/${id}`}>
-        <Image
-          alt={name}
-          height={0}
-          width={0}
-          sizes="100vw"
-          className="h-32 w-32 mx-auto object-cover"
-          src={product_image}
-          priority={true}
-        />
-
-        <p className="font-light tracking-widest text-sm">
-          {name}
-        </p>
-        <p className="text-gray-700">
-          ₦{minPrice} - {maxPrice}
-        </p>
-      </Link>
-    </m.div>
+    <div className="mt-4">
+      <Image
+        alt={name}
+        src={url}
+        sizes="100%"
+        height={0}
+        width={0}
+        className="h-36 w-36 object-cover mx-auto"
+      />
+      <div className="text-center mt-2">
+        <p>{name}</p>
+        <p className="text-xs text-gray-600">{formatted_with_symbol}</p>
+      </div>
+    </div>
   );
 };
 

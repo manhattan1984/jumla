@@ -11,14 +11,16 @@ const Header = ({ links }) => {
   const { setOpen } = useCart();
   const { menuOpen, setMenuOpen } = useMenu();
   return (
-    <nav className="top-0 z-20 flex justify-between p-2 fixed w-full shadow bg-white">
+    <nav className="top-0 z-10 flex justify-between p-2 fixed w-full shadow bg-white">
       <FiMenu
         className="text-2xl cursor-pointer lg:hidden"
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={() => {
+          setMenuOpen(!menuOpen);
+
+        }}
       />
       <Link href="/" className={"text-md uppercase font-gajraj"}>
         <div className="flex items-center gap-4">
-          
           <p className="">JUMLA</p>
         </div>
       </Link>
@@ -31,7 +33,11 @@ const Header = ({ links }) => {
       <div className="lg:flex items-center hidden">
         <ul>
           {links.map(({ link, name }) => (
-            <Link key={name} className="uppercase mx-4 hover:text-gray-300" href={link}>
+            <Link
+              key={name}
+              className="uppercase mx-4 hover:text-gray-300"
+              href={link}
+            >
               {name}
             </Link>
           ))}

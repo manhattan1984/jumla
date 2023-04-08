@@ -13,23 +13,23 @@ const Footer = ({ links }) => {
     const email = emailRef.current.value;
 
     if (email) {
-      try {
-        const res = await fetch("/api/addtonewsletter", {
-          method: "POST",
-          body: JSON.stringify({ email }),
-        });
+      // try {
+      //   const res = await fetch("/api/addtonewsletter", {
+      //     method: "POST",
+      //     body: JSON.stringify({ email }),
+      //   });
 
-        const { status } = res;
-        if (status == 200) {
+      //   const { status } = res;
+      //   if (status == 200) {
           toast(`You've been added to our newsletter`);
           emailRef.current.value = null;
-        } else {
-          toast("You're already signed up");
-        }
-      } catch (error) {
-        console.log(error);
-        toast.error("Error");
-      }
+      //   } else {
+      //     toast("You're already signed up");
+      //   }
+      // } catch (error) {
+      //   console.log(error);
+      //   toast.error("Error");
+      // }
       setLoading(false);
       return;
     }
@@ -43,7 +43,7 @@ const Footer = ({ links }) => {
         <div className="lg:flex gap-[32px]">
           <div className="flex-1">
             <p className="pt-8 border-b border-white pb-4 text-xs font-bold">
-              Main Menu
+              Other Pages
             </p>
 
             <div className=" mt-4">
@@ -89,7 +89,7 @@ const Footer = ({ links }) => {
                 <input
                   ref={emailRef}
                   placeholder="your-email@example.com"
-                  className="w-full p-4 text-red-600"
+                  className="w-full p-4 text-black"
                 />
                 <button
                   disabled={loading}
@@ -100,7 +100,7 @@ const Footer = ({ links }) => {
                     <span className="flex justify-center items-center">
                       <svg
                         aria-hidden="true"
-                        class="w-8 h-8 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-red-400"
+                        class="w-8 h-8 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-orange-400"
                         viewBox="0 0 100 101"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"

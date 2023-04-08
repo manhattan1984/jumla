@@ -5,11 +5,9 @@ import React, { useState } from "react";
 import { useCart, useLocalStorage } from "../../(context)/CartContext";
 import { toast, Toaster } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
-import supabase from "@/utils/supabase";
 
 const Payment = ({ paymentTypes }) => {
   const router = useRouter();
-  const { getTotalCost, shippingCost } = useCart();
 
   const [userInfo] = useLocalStorage("userInfo", null);
   const [shippingMethod] = useLocalStorage("shippingMethod", null);
@@ -48,107 +46,11 @@ const Payment = ({ paymentTypes }) => {
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
   };
 
-  const insertOrderToDatabase = async () => {
-    // Insert User Payment
-
-    const { data: userPaymentData, error: userPaymentError } = await supabase
-      .from("user_payment_method")
-      .insert([
-        { user_email: email, is_default: false, payment_type_id: paymentType },
-      ])
-      .select();
-
-    const userPaymentId = userPaymentData[0].id;
-
-    
-
-    // Insert Shipping Address
-
-    const { data: shippingAddressData, error: shippingAddressError } =
-      await supabase
-        .from("address")
-        .insert([
-          {
-            city,
-            state,
-            country,
-            // update flat_number somewhere
-            flat_number: 1,
-            address,
-            zipcode,
-            apartment,
-          },
-        ])
-        .select();
-
-    const shippingAddressId = shippingAddressData[0].id;
-
-
-    // Insert Shop Order
-    const { data: shopOrderData, error: shopOrderError } = await supabase
-      .from("shop_order")
-      .insert([
-        {
-          user_email: email,
-          shipping_address: shippingAddressId,
-          shipping_method: shippingMethod,
-          order_total: total,
-          order_status: 1,
-          payment_method_id: userPaymentId,
-        },
-      ])
-      .select();
-
-    const shopOrderDataId = shopOrderData[0].id;
-
-   
-
-    const getProductPrice = async (id) => {
-      let {
-        data: { price },
-        error,
-      } = await supabase
-        .from("product_item")
-        .select("price")
-        .eq("id", id)
-        .single();
-
-
-      if (price) {
-        return price;
-      }
-
-      throw Error(error);
-    };
-
-    const promisedOrderLines = cartProducts.map(
-      async ({ id, quantity: qty }) => ({
-        product_item_id: id,
-        qty,
-        price: await getProductPrice(id),
-        order_id: shopOrderDataId,
-      })
-    );
-
-    const orderLines = await Promise.all(promisedOrderLines);
-
-    const { data: orderLineData, error: orderLineError } = await supabase
-      .from("order_line")
-      .insert(
-        // Insert Order Line
-        orderLines
-      );
-
-   
-
-    setCartProducts([]);
-  };
-
   // you can call this function anything
   const onSuccess = (reference) => {
     // Implementation for whatever you want to do with reference and after success call.
     console.log(reference);
-    insertOrderToDatabase().then(() => router.push("/checkout/success"));
+    // insertOrderToDatabase().then(() => router.push("/checkout/success"));
   };
 
   // you can call this function anything

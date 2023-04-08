@@ -1,128 +1,127 @@
 "use client";
+import { commerce } from "@/utils/commerce";
 import supabase from "@/utils/supabase";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { AiOutlineClose, AiOutlineDelete } from "react-icons/ai";
-import { useCart } from "../(context)/CartContext";
+import { useCart, useCartDispatch } from "../(context)/CartContext";
+import Spinner from "./Spinner";
 
-const CartRecommendation = ({ name, price, product_image, id }) => {
-  const { addOneToCart } = useCart();
+const CartItem = ({
+  item: {
+    name,
+    image: { url },
+    permalink,
+    variant,
+    quantity,
+    line_total: { formatted_with_symbol },
+    product_id,
+    selected_options,
+    id,
+  },
+}) => {
+  const { setCart } = useCartDispatch();
+  const hasVariants = selected_options.length >= 1;
 
+  const [loading, setLoading] = useState(false);
+
+  const handleUpdateCart = (cart) => {
+    setCart(cart);
+
+    return cart;
+  };
+
+  const handleRemoveItem = () => {
+    setLoading(true);
+    commerce.cart
+      .remove(id)
+      .then(handleUpdateCart)
+      .then(({ subtotal }) => {
+        setLoading(false);
+      });
+  };
+
+  const decrementQuantity = () => {
+    setLoading(true);
+    quantity > 1
+      ? commerce.cart
+          .update(id, { quantity: quantity - 1 })
+          .then(handleUpdateCart)
+          .then(({ subtotal }) => {
+            setLoading(false);
+          })
+      : handleRemoveItem();
+  };
+
+  const incrementQuantity = () => {
+    setLoading(true);
+    commerce.cart
+      .update(id, { quantity: quantity + 1 })
+      .then(handleUpdateCart)
+      .then(({ subtotal }) => {
+        setLoading(false);
+      });
+  };
   return (
-    <div className="flex justify-between w-full items-center p-4 border-b gap-4">
-      <Image
-        alt={name}
-        src={product_image}
-        height={90}
-        width={90}
-        // sizes={"50%"}
-        // className="h-20 w-32"
-      />
-      <div className="w-full">
-        <p className="mb-2 text-sm font-medium">{name}</p>
-        <p className="text-sm text-gray-500">${price}</p>
-      </div>
-      <button
-        className="text-gray-700"
-        onClick={() => {
-          addOneToCart(id);
-        }}
+    <div className="relative">
+      <div
+        className={`relative flex gap-2 justify-between p-8 border-b items-center ${
+          loading ? "opacity-50" : ""
+        }`}
       >
-        Add
-      </button>
-    </div>
-  );
-};
-
-const CartItem = ({ id, quantity }) => {
-  const { addOneToCart, removeOneFromCart, deleteFromCart } = useCart();
-  const [product, setProduct] = useState();
-
-  useEffect(() => {
-    async function getProduct() {
-      let { data, error } = await supabase
-        .from("product_item")
-        .select(
-          "*, product (name, id, product_image), variation_option_id (value)"
-        )
-        .eq("id", id)
-        .single();
-
-      setProduct(data);
-    }
-
-    getProduct();
-  }, []);
-
-  if (product) {
-    const {
-      product: { name, id: product_id, product_image },
-      price,
-      variation_option_id: { value: size },
-    } = product;
-
-    return (
-      <div className="flex gap-2 justify-between p-8 border-b items-center">
-        <Image height={60} width={60} src={product_image} alt={name} />
+        <Image height={60} width={60} src={url} alt={name} />
         <div className="w-full">
           <div className="">
-            <Link href={`/products/${product_id}`} className="underline">
+            <Link href={`/products/${permalink}`} className="underline">
               {name}
             </Link>
-            <p className="text-xs">
-              size: <span className="uppercase">{size}</span>
-            </p>
+            {hasVariants && (
+              <p>
+                {selected_options.map(({ option_name }, index) => (
+                  <React.Fragment key={index}>
+                    {index ? `, ${option_name}` : option_name}
+                  </React.Fragment>
+                ))}
+              </p>
+            )}
           </div>
-          <div className="flex mt-2 text-center font-medium w-1/2">
-            <button
-              onClick={() => removeOneFromCart(id)}
-              className="border w-full"
-            >
+          <div className="flex mt-2 text-center font-medium w-full md:w-1/2">
+            <button onClick={decrementQuantity} className="border w-full">
               -
             </button>
             <p className="border w-full">{quantity}</p>
-            <button onClick={() => addOneToCart(id)} className="border w-full">
+            <button onClick={incrementQuantity} className="border w-full">
               +
             </button>
           </div>
         </div>
         <div className="">
           <AiOutlineDelete
-            onClick={() => deleteFromCart(id)}
+            onClick={handleRemoveItem}
             className="cursor-pointer text-gray-500"
           />
-          <p className="text-xs text-gray-500 mt-4">₦{price}</p>
+          <p className="text-xs text-gray-500 mt-4">{formatted_with_symbol}</p>
         </div>
       </div>
-    );
-  }
+      <div
+        className={`absolute top-1/2 text-center w-full ${
+          loading ? "block" : "hidden"
+        }`}
+      >
+        <Spinner />
+      </div>
+    </div>
+  );
 };
+
 const Cart = () => {
-  const { open, setOpen, cartProducts, total, getTotalCost } = useCart();
+  const { open, setOpen, line_items, subtotal, hosted_checkout_url } =
+    useCart();
 
   const router = useRouter();
-
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
-
-  useEffect(() => {
-    async function getProducts() {
-      let { data, error } = await supabase.rpc("get_random_products");
-
-      if (error) console.error(error);
-      else console.log(data);
-
-      setRecommendedProducts(data);
-    }
-
-    getProducts();
-  }, [cartProducts]);
-
-  useEffect(() => {
-    getTotalCost();
-  }, [cartProducts]);
 
   return (
     <>
@@ -150,7 +149,7 @@ const Cart = () => {
           </div>
 
           <div className="h-4/5 overflow-y-auto">
-            {cartProducts.length === 0 ? (
+            {line_items.length === 0 ? (
               <div className="text-center p-8 border-b">
                 <p className="uppercase font-light tracking-wider text-gray-500">
                   Your cart is empty
@@ -161,30 +160,30 @@ const Cart = () => {
 
                 <button
                   onClick={() => {
-                    router.push("/products");
+                    router.push("/");
                     setOpen(false);
                   }}
-                  className="w-full bg-orange-600 text-white p-2"
+                  className="w-full bg-orange-400 text-white p-2"
                 >
                   Shop Now
                 </button>
               </div>
             ) : (
-              cartProducts.map((item, index) => (
-                <CartItem {...item} key={index} />
+              line_items.map((item, index) => (
+                <CartItem item={item} key={index} />
               ))
             )}
           </div>
 
-          <div className="w-full p-4">
-            <div className="flex justify-between font-medium">
-              <p>Subtotal ({cartProducts.length} item(s))</p>
-              <p>₦{cartProducts.length !== 0 ? total : 0}</p>
+          <div className="w-full p-4 mb-2">
+            <div className="flex justify-between font-medium text-sm">
+              <p>Subtotal ({line_items.length} item(s))</p>
+              <p>{subtotal.formatted_with_symbol}</p>
             </div>
 
-            <button
+            {/* <button
               onClick={() => {
-                if (cartProducts.length !== 0) {
+                if (line_items.length !== 0) {
                   setOpen(false);
                   router.push("/checkout");
                   return;
@@ -194,7 +193,14 @@ const Cart = () => {
               className="w-full bg-orange-600 text-white p-2"
             >
               Checkout
-            </button>
+            </button> */}
+
+            <a
+              href={hosted_checkout_url}
+              className="w-full block text-center bg-orange-400 text-white p-2 mt-1"
+            >
+              Checkout
+            </a>
           </div>
         </div>
       </div>
